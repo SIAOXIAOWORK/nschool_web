@@ -2,7 +2,8 @@ from configparser import ConfigParser
 import psycopg
 from flask import Flask, g
 from flask_restful import Api
-from routes.auth_routes import register_auth_routes, login_auth_routes
+from routes.auth_routes import login_routes, register_routes
+from routes.service_route import service_routes
 
 def create_app():
 
@@ -26,11 +27,13 @@ def create_app():
             g.conn.close()
 
     #登入
-    login_auth_routes(api)
+    login_routes(api)
 
     #註冊
-    register_auth_routes(api)
+    register_routes(api)
 
+
+    service_routes(api)
     return app
 
 
