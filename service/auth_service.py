@@ -4,22 +4,23 @@ from utils.token_util import generate_jwt
 import time
 import re
 from flask import request
-class Login_server:
+
+class LoginServer:
 
     def check_login_args(self, account, password):
         hash_password = hashlib.md5(password.encode()).hexdigest()
-        print(hash_password)
         g.cur.execute("SELECT id, user_name FROM member where account = %s and password = %s",(str(account), str(hash_password)))
         data = g.cur.fetchone()
         if data:
-            member_id, user_name = data
-
+            member_id = data["id"] 
+            user_name = data["user_name"]
             vendor_id = None
             
             g.cur.execute("SELECT id FROM vendor where member_id = %s", (member_id,))
             vendor_data = g.cur.fetchone()
             if vendor_data:
-                vendor_id = vendor_data[0]
+                print(vendor_data)
+                vendor_id = vendor_data["id"]
 
 
             token_args = {"id":member_id, "user_name":user_name, "vendor_id":vendor_id, "exp":int(time.time())+3600}
@@ -29,7 +30,7 @@ class Login_server:
     
 
 
-class Register_server:
+class RegisterServer:
     
     def register_member(self, account, password, user_name, email, phone):
         checkdata = CheckData()

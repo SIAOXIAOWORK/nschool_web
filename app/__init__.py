@@ -3,7 +3,8 @@ import psycopg
 from flask import Flask, g
 from flask_restful import Api
 from routes.auth_routes import login_routes, register_routes
-from routes.service_route import service_routes
+from routes.offering_route import offering_routes
+from psycopg.rows import dict_row
 
 def create_app():
 
@@ -17,7 +18,7 @@ def create_app():
         config.read('./db.ini')
         db_setting = config['postgres']
         g.conn = psycopg.connect(**db_setting)
-        g.cur = g.conn.cursor()
+        g.cur = g.conn.cursor(row_factory=dict_row)
 
     @app.teardown_request
     def close_db(exception):
@@ -33,7 +34,7 @@ def create_app():
     register_routes(api)
 
 
-    service_routes(api)
+    offering_routes(api)
     return app
 
 

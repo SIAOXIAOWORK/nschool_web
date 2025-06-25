@@ -1,5 +1,5 @@
 from flask_restful import Resource, reqparse
-from service.auth_service import Login_server, Register_server
+from service.auth_service import LoginServer, RegisterServer
 from utils.token_util import verify_token
 from flask import jsonify
 
@@ -16,7 +16,7 @@ class Login(Resource):
         account = args["account"]
         password = args["password"]
 
-        loginserver = Login_server()
+        loginserver = LoginServer()
         result, token = loginserver.check_login_args(account,password)
 
         if result:
@@ -51,7 +51,7 @@ class Register_member(Resource):
         user_name = args["user_name"]
         email = args["email"]
         phone = args["phone"]
-        register = Register_server()
+        register = RegisterServer()
         
         result, message = register.register_member(account, password, user_name, email, phone)
         
@@ -83,7 +83,7 @@ class Register_vendor(Resource):
         store_address = args["store_address"]
         store_phone = args["store_phone"]
         store_reg_no = args["store_reg_no"]
-        register = Register_server()
+        register = RegisterServer()
         result, message = register.register_vendor(member_id, store_name, store_address, store_phone, store_reg_no)
 
         if not result:
