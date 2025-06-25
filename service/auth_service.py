@@ -19,7 +19,6 @@ class LoginServer:
             g.cur.execute("SELECT id FROM vendor where member_id = %s", (member_id,))
             vendor_data = g.cur.fetchone()
             if vendor_data:
-                print(vendor_data)
                 vendor_id = vendor_data["id"]
 
 
@@ -47,17 +46,35 @@ class RegisterServer:
     
     def register_vendor(self, member_id, store_name, store_address, store_phone, store_reg_no):
 
+        message = None
+        token = None
+        result = None
 
         checkdata = CheckData()
 
         result, message = checkdata.check_register_verdor_args(store_phone, store_reg_no)
         if not result:
-            return False, message
+            return result, message, token
         
         g.cur.execute("INSERT INTO vendor(member_id, store_name, store_address, store_phone, store_reg_no) VALUES (%s, %s, %s, %s, %s)",(member_id, store_name, store_address, store_phone, store_reg_no))
         g.conn.commit()
 
-        return True, None
+        g.cur.execute("SELECT user_name From member where id = %s",(member_id,))
+        user_data = g.cur.fetchone()
+        if user_data:
+            user_name = user_data["user_name"]
+
+        g.cur.execute("SELECT id FROM vendor where member_id = %s", (member_id,))
+        vendor_data = g.cur.fetchone()
+        if vendor_data:
+            vendor_id = vendor_data["id"]
+
+        token_args = {"id":member_id, "user_name":user_name, "vendor_id":vendor_id, "exp":int(time.time())+3600}
+        token = generate_jwt(token_args)
+
+
+
+        return result, message, token
         
 
             
@@ -100,7 +117,7 @@ class CheckData:
     def check_store_reg_no(self, store_reg_no):
         g.cur.execute("SELECT EXISTS(SELECT 1 FROM vendor where store_reg_no = %s)",(str(store_reg_no),))
         
-        if g.cur.fetchone()[0]:
+        if g.cur.fetchone()['exists']:
             message = "Store_reg_no already exists."
             return False, message
         
@@ -108,7 +125,7 @@ class CheckData:
 
     def check_member_id(self, member_id):
         g.cur.execute("SELECT EXISTS(SELECT 1 FROM member where id = %s)",(int(member_id),))
-        result = g.fetchone()[0]
+        result = g.fetchone()['exists']
         if not result:
             return False, "Invalid id"
         
@@ -120,8 +137,9 @@ class CheckData:
             return False, message
         
         g.cur.execute("SELECT EXISTS(SELECT 1 FROM member WHERE account = %s)",(str(account),))
-        
-        if g.cur.fetchone()[0]:
+       
+        if g.cur.fetchone()["exists"]:
+            
             message = "Account already exists."
             return False, message
         

@@ -63,5 +63,17 @@ class OfferingLogic:
         g.cur.execute("SELECT * FROM offering_items where id = %s", (offering_id,))
         return g.cur.fetchall()
     
+    def delete_offering_items(self, vendor_id, offering_id):
+        g.cur.execute("SELECT vendor_id FROM offering_items where id = %s",(offering_id,))
+        if not vendor_id == g.cur.fetchone()['vendor_id']:
+            return False, "You don't have permission to delete this offering_item."
+        
+        g.cur.execute("SELECT * FROM offering_items where id = %s",(offering_id,))
+        offering_data = g.cur.fetchall()
+        g.cur.execute("DELETE FROM offering_items where id = %s",(offering_id,))
+        g.conn.commit()
+
+        return True, offering_data
+    
 
 

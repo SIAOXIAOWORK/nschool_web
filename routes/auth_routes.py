@@ -84,12 +84,12 @@ class Register_vendor(Resource):
         store_phone = args["store_phone"]
         store_reg_no = args["store_reg_no"]
         register = RegisterServer()
-        result, message = register.register_vendor(member_id, store_name, store_address, store_phone, store_reg_no)
+        result, message, token = register.register_vendor(member_id, store_name, store_address, store_phone, store_reg_no)
 
         if not result:
             return {"success":False, "message":message},400
 
-        return {"success":True}
+        return {"success":True, "message":message, "token":token}
 
 def register_routes(api):
     api.add_resource(Register_member, "/register_member")
