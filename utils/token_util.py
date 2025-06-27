@@ -1,6 +1,8 @@
 import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
 from flask import request
+from functools import wraps
+
 
 def generate_jwt(user_data):
     encoded_jwt = jwt.encode(user_data, "nschool", algorithm="HS256")
@@ -15,19 +17,28 @@ def get_jwt_token():
        
     return auth_header.split(" ")[1]
 
-def verify_token():
-    jwt_token = get_jwt_token()
+def verify_token(func):
+    def wrapper(self, *args, **kwargs):
+        jwt_token = get_jwt_token()
 
-    if not jwt_token:
-        return False, "Missing token"
+        if not jwt_token:
+            return {"success":False, "message":"Missing token."}
+        
+        try:
+            payload = jwt.decode(jwt_token, "nschool", algorithms=["HS256"])
+                    
+            if 'vendor_id' not in payload or not payload["vendor_id"] :
+                return {"success":False, "message":"Vendor_id is null."}
+            
+            return func(self, payload, *args, **kwargs)
+        
+        except ExpiredSignatureError:
+            return {"success":False, "message":"Token expired."} 
+        
+        except InvalidTokenError:
+            return {"success":False, "message":"Invalid token."}
+        
+        
     
-    try:
-        payload = jwt.decode(jwt_token, "nschool", algorithms=["HS256"])
-        return True, payload
-    
-    except ExpiredSignatureError:
-        return False, "Token expired"
-    
-    except InvalidTokenError:
-        return False, "Invalid token"
+    return wrapper
 

@@ -40,8 +40,7 @@ class OfferingItemsDetail(Resource):
 
 
 
-    def get(self):
-        offering_id = request.args.get("offering_id",type=int)
+    def get(self, offering_id):
         offeringlogic = OfferingLogic()
 
         if offering_id:
@@ -49,16 +48,10 @@ class OfferingItemsDetail(Resource):
         
         return {"success":False, "message":"Not found this offering_item"}
     
-    def post(self):
+    @verify_token
+    def post(self,payload):
         args = self.parser.parse_args()
-        
-        is_valid, payload = verify_token()
-        if not is_valid:
-            return {"success":False, "message":payload},401
-        
-        if 'vendor_id' not in payload or not payload["vendor_id"] :
-            return {"success":False, "message":"Vendor_id is null."}
-        
+               
         if args["need_deposit"] == True and not args["deposit_percent"]:
             return {"success":False, "message":"Deposit_percent can't be empty."}
         
@@ -75,17 +68,12 @@ class OfferingItemsDetail(Resource):
 
 
 
-        
-    def put(self):
+    @verify_token
+    def put(self, payload, offering_id):
         args = self.parser.parse_args()
         offering_id = request.args.get("offering_id",type=int)
         
-        is_valid, payload = verify_token()
-        if not is_valid:
-            return {"success":False, "message":payload},401
-        
-        if 'vendor_id' not in payload or not payload["vendor_id"] :
-            return {"success":False, "message":"Vendor_id is null."}
+       
         
         if args["need_deposit"] == True and not args["deposit_percent"]:
             return {"success":False, "message":"Deposit_percent can't be empty."}
@@ -98,17 +86,9 @@ class OfferingItemsDetail(Resource):
         
         return {"success":False, "message": message}
     
-    def delete(self):
-        
-        offering_id = request.args.get("offering_id",type=int)
-        
-        is_valid, payload = verify_token()
-        if not is_valid:
-            return {"success":False, "message":payload},401
-        
-        if 'vendor_id' not in payload or not payload["vendor_id"] :
-            return {"success":False, "message":"Vendor_id is null."}
-        
+    @verify_token
+    def delete(self,payload, offering_id):
+               
         offeringlogic = OfferingLogic()
         result, message = offeringlogic.delete_offering_items(payload["vendor_id"], offering_id)
 
@@ -116,6 +96,21 @@ class OfferingItemsDetail(Resource):
             return {"success": result, 'message':message}
         
         return {"success": result, 'message':message}
+
+class OfferingTime:
+
+    def get(self, offering_id):
+        
+        pass
+
+
+
+    def post(self):
+        pass
+    def put(self):
+        pass
+    def delete(self):
+        pass
 
         
 
@@ -127,6 +122,6 @@ class OfferingItemsDetail(Resource):
 def offering_routes(api):
     api.add_resource(OfferingService, "/offeringitems/create")
     api.add_resource(OfferingItemsList,"/offeringitems")
-    api.add_resource(OfferingItemsDetail, "/offeringitems")
-
+    api.add_resource(OfferingItemsDetail, "/offeringitems/<int:offering_id>")
+    # api.add_resource(OfferingTime,"offeringitems/<int:offering_id>/times")
 

@@ -2,7 +2,7 @@ from configparser import ConfigParser
 import psycopg
 from flask import Flask, g
 from flask_restful import Api
-from routes.auth_routes import login_routes, register_routes
+from routes.auth_routes import login_routes, auth_routes
 from routes.offering_route import offering_routes
 from psycopg.rows import dict_row
 
@@ -31,7 +31,7 @@ def create_app():
     login_routes(api)
 
     #註冊
-    register_routes(api)
+    auth_routes(api)
 
 
     offering_routes(api)
