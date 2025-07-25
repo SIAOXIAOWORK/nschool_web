@@ -6,10 +6,11 @@ from service.offering_service import OfferingService
 from app import g
 
 
-class BookingDetailByMember(Resource):
+class GetBookingDataByMember(Resource):
     def __init__(self):
         pass
 
+    # for the member source
     @verify_token
     def get(self, payload):
         print("123")
@@ -45,6 +46,19 @@ class BookingDetailByMember(Resource):
         
         payload = convert_datetime(data)
         return {'result': result, 'message': message, 'payload':payload}
+    
+
+class ModifyBookingDataByMember(Resource):
+    
+    @verify_token
+    def delete(self, payload, booking_id):
+        booking = Booking()
+
+        result, message, payload = booking.cancel_booking_item_by_id(payload, booking_id)
+
+        return {'result': result, 'message': message, "payload": payload}
+        
+
         
 
 
@@ -64,5 +78,6 @@ class BookingOffering(Resource):
 
 
 def booking_routes(api):
-    api.add_resource(BookingDetailByMember, "/api/member/booking_list")
+    api.add_resource(GetBookingDataByMember, "/api/member/booking_list")
+    api.add_resource(ModifyBookingDataByMember, "/api/member/booking_list/<int:booking_id>")
     api.add_resource(BookingOffering, "/api/booking/<int:offering_time_id>")
