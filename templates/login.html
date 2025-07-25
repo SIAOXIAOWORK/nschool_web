@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>登入</title>
+</head>
+<body>
+    <h1>登入</h1>
+    <form id="login-form">
+        <label>帳號:<input type="text" name="account" required></label><br>
+        <label>密碼:<input type="password" name="password" required></label><br>
+        <button type="submit">登入</button>
+    </form>
+    <div id="msg"></div>
+    <script>
+        //找到元件表單
+        const loginForm = document.getElementById('login-form')
+        // 綁定sumbmit 事件，阻止表單預設行為(不讓他直接刷新)
+        loginForm.addEventListener('submit',async function(e){e.preventDefault();//阻止送出
+        //取得帳號及密碼
+        const account = this.account.value;
+        const password = this.password.value;
+        
+        //用fetch 發送POST 請求到API
+        const res = await fetch('/api/login',{
+            method: 'POST',
+            headers: {'Content-Type': "application/json"},
+            body: JSON.stringify({ account, password }) //送出JSON格式
+        });
+        //解析後端回傳的JSON
+        const data = await res.json();
+        //如果成功且有TOKEN
+        if (data.success && data.token){
+            // 把token 存到localStorage
+            localStorage.setItem('jwt_token', data.token);
+            //轉跳到會員頁
+            window.location.href = '/member';
+        }else{
+            //失敗時顯示錯誤訊息
+            document.getElementById('msg').innerText = data.message || '登入失敗';
+        }
+        });
+    </script>
+</body>
+</html>

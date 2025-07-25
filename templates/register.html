@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>註冊</title>
+</head>
+<body>
+    <h1>註冊新帳號</h1>
+    {% if error %}
+        <div style="color: red;">{{ error }}</div>
+    {% endif %}
+    {% if success %}
+        <div style="color: green;">{{ success }}</div>
+    {% endif %}
+    <form action="/register" method = "post">
+        <label>帳號:<input type="text" name="account" required></label><br>
+        <label>密碼:<input type="password" name="password" required></label><br>
+        <label>暱稱:<input type="text" name="user_name" required></label><br>
+        <label>Email:<input type="email" name="email" required></label><br>
+        <label>手機:<input type="text" name="phone" required></label><br>
+        <button type ="submit">註冊</button>
+    </form>
+    <p>已有帳號?<a href="/login">登入</a></p>
+</body>
+</html>
+

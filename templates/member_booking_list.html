@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>預約清單</title>
+</head>
+<body>
+    <h1>預約清單</h1>
+    <div id = "booking_list"></div>
+<script>
+    let token = localStorage.getItem("jwt_token");
+    let apiUrl = `/api/member/booking_list`
+    if(!token){
+        alert("請先登入");
+        window.location.href ="/login";    
+    }
+    fetch(apiUrl, {
+        method: "GET",
+        headers: {"Authorization": "Bearer " + token}
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data); 
+        if(!data){
+            let booking_list = document.getElementById("booking_list")
+            booking_list.textContent = "查無資料"
+        }else{
+            let booking_list = document.getElementById("booking_list")
+            let table = document.createElement("table")
+            table.border = "1";
+            let thead = document.createElement("thead")
+            let headerRow = document.createElement("tr")
+            let headers = ["ID", "服務名稱", "服務價格", "服務開始時間", "結束時間", "服務狀態"];
+
+            headers.forEach(text => {
+                let th = document.createElement("th");
+                th.innerText = text;
+                headerRow.appendChild(th)
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+        let tbody = document.createElement("tbody");
+        data.payload.forEach(newData => {
+            let row = document.createElement("tr");
+            // 依照需求取得各個欄位
+            let id = newData.id || "";
+            let offering = (newData.offering_item && newData.offering_item[0]) ? newData.offering_item[0] : {};
+            let time = (newData.offering_time && newData.offering_time[0]) ? newData.offering_time[0] : {};
+
+            let values = [
+                id,
+                offering.offering_name || "",
+                offering.price || "",
+                time.start_time || "",
+                time.end_time || "",
+                time.status || ""
+            ];
+
+            values.forEach(val => {
+                let td = document.createElement("td");
+                td.innerText = val;
+                row.appendChild(td);
+            });
+            tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        booking_list.innerHTML = "";  // 清空原本內容
+        booking_list.appendChild(table);
+    }})
+</script>
+</body>
+</html>

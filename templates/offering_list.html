@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>服務列表</title>
+</head>
+<body>
+    <h1>所有服務</h1>
+    <div id="offering-list"></div>
+    <button onclick="logout()">登出</button>
+    <script>
+    function parseJwt(token) {
+        try {
+            if (!token) return null;
+            const payload = token.split('.')[1];
+            const jsonStr = decodeURIComponent(
+                atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
+                .split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join('')
+            );
+            return JSON.parse(jsonStr);
+        } catch (e) { return null; }
+    }
+    function logout() {
+        localStorage.removeItem("jwt_token");
+        window.location.href = "/login";
+    }
+    (function main() {
+        const token = localStorage.getItem("jwt_token");
+        if (!token) { alert("請先登入"); window.location.href = "/login"; return; }
+
+        // 取得所有服務
+        fetch("/api/offering_list", {
+            method: "GET",
+            headers: { "Authorization": "Bearer " + token }
+        })
+        .then(res => res.json())
+        .then(list => {
+            if (!Array.isArray(list)) { alert("無法取得服務"); return; }
+            let html = "<table border=1><tr><th>服務名稱</th><th>價格</th><th>操作</th></tr>";
+            for (const o of list) {
+                html += `<tr>
+                  <td>${o.offering_name || ""}</td>
+                  <td>${o.price || ""}</td>
+                  <td><button onclick="book(${o.id})">預約</button></td>
+                </tr>`;
+            }
+            html += "</table>";
+            document.getElementById("offering-list").innerHTML = html;
+        });
+
+        window.book = function(offering_id) {
+            const time = prompt("請輸入預約時間（YYYY-MM-DD HH:mm）");
+            if (!time) return;
+            // 預約API示例，視你的API而定（請確認 offering_time API 格式）
+            fetch("/api/offering_time", {
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer " + token,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ offering_id: offering_id, time: time })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || "預約失敗");
+                    return;
+                }
+                alert("預約成功！");
+            });
+        }
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>註冊商家</title>
+</head>
+<body>
+    <h1>註冊成為商家</h1>
+    <form id="vendor-form">
+        商家名稱：<input name="vendor_name" required><br>
+        聯絡電話：<input name="phone"><br>
+        地址：<input name="address"><br>
+        統編: <input name="store_reg_no"><br>
+        <button type="submit">送出申請</button>
+    </form>
+    <button onclick="logout()">登出</button>
+    <script>
+    function parseJwt(token) {
+        try {
+            if (!token) return null;
+            const payload = token.split('.')[1];
+            const jsonStr = decodeURIComponent(
+                atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
+                .split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join('')
+            );
+            return JSON.parse(jsonStr);
+        } catch (e) { return null; }
+    }
+    function logout() {
+        localStorage.removeItem("jwt_token");
+        window.location.href = "/login";
+    }
+
+    document.getElementById("vendor-form").onsubmit = function(e) {
+        e.preventDefault();
+        const token = localStorage.getItem("jwt_token");
+        if (!token) { alert("請先登入"); window.location.href = "/login"; return; }
+        fetch("/api/member/register_vendor", {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                store_name: this.vendor_name.value,
+                store_phone: this.phone.value,
+                store_address: this.address.value,
+                store_reg_no: this.store_reg_no.value
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {s
+                alert(data.message || "註冊失敗");
+                return;
+            }
+            // 建議後端回傳新的 token
+            if (data.token) {
+                localStorage.setItem("jwt_token", data.token);
+            }
+            alert("註冊成功，您已升級為商家！");
+            window.location.href = "/manage_offering";
+        });
+    };
+    </script>
+</body>
+</html>

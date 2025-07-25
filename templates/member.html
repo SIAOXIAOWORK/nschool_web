@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>會員專區</title>
+</head>
+<body>
+    <h1>會員專區</h1>
+    <div id="member-info"></div>
+    <form id="edit-form" style="display:none;">
+        暱稱：<input type="text" name="user_name" id="user_name"><br>
+        電話：<input type="text" name="phone" id="phone"><br>
+        Email：<input type="text" name="email" id="email"><br>
+        <button type="submit">儲存修改</button>
+        <button type="button" onclick="toggleEdit(false)">取消</button>
+    </form>
+    <button id="edit-btn" onclick="toggleEdit(true)" style="display:none;">修改資料</button>
+    <button onclick="logout()">登出</button>
+    <script>
+    function parseJwt(token) {
+        try {
+            if (!token) return null;
+            const payload = token.split('.')[1];
+            const jsonStr = decodeURIComponent(
+                atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
+                .split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join('')
+            );
+            return JSON.parse(jsonStr);
+        } catch (e) { return null; }
+    }
+    function logout() {
+        localStorage.removeItem("jwt_token");
+        window.location.href = "/login";
+    }
+
+    // 切換顯示編輯表單
+    function toggleEdit(show) {
+        document.getElementById("edit-form").style.display = show ? "block" : "none";
+        document.getElementById("edit-btn").style.display = show ? "none" : "inline-block";
+    }
+
+    // 主程式
+    (function main() {
+        const token = localStorage.getItem("jwt_token");
+        if (!token) { alert("請先登入"); window.location.href = "/login"; return; }
+        const payload = parseJwt(token);
+        if (!payload || typeof payload.id !== "number") {
+            alert("JWT 內容錯誤，請重新登入");
+            localStorage.removeItem("jwt_token");
+            window.location.href = "/login";
+            return;
+        }
+        const member_id = payload.id;
+        const apiUrl = `/api/member/${member_id}`;
+
+        // 取得會員資料
+        fetch(apiUrl, {
+            method: "GET",
+            headers: { "Authorization": "Bearer " + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                alert(data.message || "查詢失敗");
+                localStorage.removeItem("jwt_token");
+                window.location.href = "/login";
+                return;
+            }
+            const m = data.member_data;
+            document.getElementById("member-info").innerHTML = `
+                <b>暱稱：</b>${m.user_name || ""}<br>
+                <b>電話：</b>${m.phone || ""}<br>
+                <b>Email：</b>${m.email || ""}`;
+            // 填入表單
+            document.getElementById("user_name").value = m.user_name || "";
+            document.getElementById("phone").value = m.phone || "";
+            document.getElementById("email").value = m.email || "";
+            document.getElementById("edit-btn").style.display = "inline-block";
+        });
+
+        // 表單送出修改
+        document.getElementById("edit-form").onsubmit = function(e) {
+            e.preventDefault();
+            fetch(apiUrl, {
+                method: "PUT",
+                headers: {
+                    "Authorization": "Bearer " + token,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    user_name: document.getElementById("user_name").value,
+                    phone: document.getElementById("phone").value,
+                    email: document.getElementById("email").value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || "修改失敗");
+                    return;
+                }
+                alert("修改成功！");
+                toggleEdit(false);
+                // 重新取得最新會員資料
+                main();
+            });
+        };
+    })();
+    </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 from flask_restful import Resource, reqparse
 from service.auth_service import LoginServer, MemberService, Member, CheckData
-from utils.token_util import verify_token, get_jwt_token
-from flask import jsonify
+from utils.util import verify_token, get_jwt_token
+from flask import jsonify, request
 
 
 class Login(Resource):
@@ -21,18 +21,18 @@ class Login(Resource):
 
         if result:
             return {
-                "result": "success",
+                "success": True,
                 "token": token
             }
         
         return {
-            "result":"faild",
-            "token": None
+            "success": False,
+            "message": "帳號或密碼錯誤"
         }
     
 
 def login_routes(api):
-    api.add_resource(Login, "/login")
+    api.add_resource(Login, "/api/login")
 
 
 class Register_member(Resource):
@@ -122,32 +122,29 @@ class MemberPassword(Resource):
 
     
 class Register_vendor(Resource):
-    def __init__(self):
-        self.parser = reqparse.RequestParser(bundle_errors=True)
-        self.parser.add_argument("store_name", type=str, required=True, help="store_name can't be empty.")
-        self.parser.add_argument("store_address", type=str, required=True, help="store_address can't be empty.")
-        self.parser.add_argument("store_phone", type=str, required=True, help="store_phone can't be empty.")
-        self.parser.add_argument("store_reg_no", type=str, required=True, help="store_reg_no can't be empty.")
-
     @verify_token
-    def post(self,payload):
-                      
-        member_id = payload["id"]     
-        args = self.parser.parse_args()
-        store_name = args["store_name"]
-        store_address = args["store_address"]
-        store_phone = args["store_phone"]
-        store_reg_no = args["store_reg_no"]
+    def post(self, payload):
+        member_id = payload["id"]
+        data = request.get_json()
+        store_name = data.get("store_name")
+        store_address = data.get("store_address")
+        store_phone = data.get("store_phone")
+        store_reg_no = data.get("store_reg_no")
+
+        # 資料檢查
+        if not all([store_name, store_address, store_phone, store_reg_no]):
+            return {"success": False, "message": "所有欄位皆為必填"}, 400
+
         memberservice = MemberService()
         result, message, token = memberservice.register_vendor(member_id, store_name, store_address, store_phone, store_reg_no)
 
         if not result:
-            return {"success":False, "message":message},400
+            return {"success":False, "message":message}, 400
 
-        return {"success":True, "message":message, "token":token}
+        return {"success": True, "message": message, "token": token}
 
 def auth_routes(api):
-    api.add_resource(MemberDetial, "/member/<int:member_id>")
+    api.add_resource(MemberDetial, "/api/member/<int:member_id>")
     api.add_resource(Register_member, "/member/create")
-    api.add_resource(Register_vendor, "/member/vendor_create")
+    api.add_resource(Register_vendor, "/api/member/register_vendor")
     api.add_resource(MemberPassword, "/member/<int:member_id>/change_password")

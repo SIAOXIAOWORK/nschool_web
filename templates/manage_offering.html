@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>商家服務管理</title>
+</head>
+<body>
+    <h1>商家服務管理</h1>
+    <h2>新增服務</h2>
+    <form id="add-offering-form">
+        名稱: <input name="offering_name" required><br>
+        價格: <input name="price" type="number" required><br>
+        時長（分鐘）: <input name="duration_min" type="number" required><br>
+        說明: <input name="description"><br>
+        訂金百分比: <input name="deposit_percent" type="number" min="0" max="100"><br>
+        <button type="submit">新增服務</button>
+    </form>
+    <hr>
+    <h2>已建立服務</h2>
+    <div id="offering-list"></div>
+
+    <h2>新增服務時段</h2>
+    <form id="add-time-form">
+        服務ID: <input name="offering_id" required><br>
+        開始時間: <input name="start_time" placeholder="YYYY-MM-DD HH:MM" required><br>
+        <button type="submit">新增時段</button>
+    </form>
+    <button onclick="logout()">登出</button>
+<script>
+function parseJwt(token) {
+    try {
+        if (!token) return null;
+        const payload = token.split('.')[1];
+        const jsonStr = decodeURIComponent(
+            atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
+            .split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join('')
+        );
+        return JSON.parse(jsonStr);
+    } catch (e) { return null; }
+}
+function logout() {
+    localStorage.removeItem("jwt_token");
+    window.location.href = "/login";
+}
+
+// 取得所有服務，顯示表格
+function loadOfferingList(token) {
+    fetch("/api/offering_list", {
+        method: "GET",
+        headers: { "Authorization": "Bearer " + token }
+    })
+    .then(res => res.json())
+    .then(list => {
+        if (!Array.isArray(list)) { alert("取得服務失敗"); return; }
+        let html = `<table border="1"><tr>
+            <th>ID</th><th>名稱</th><th>價格</th><th>時長</th><th>說明</th><th>訂金</th><th>操作</th>
+        </tr>`;
+        for (const o of list) {
+            html += `<tr>
+                <td>${o.id}</td>
+                <td><input id="n${o.id}" value="${o.offering_name||''}"></td>
+                <td><input id="p${o.id}" type="number" value="${o.price||0}"></td>
+                <td><input id="d${o.id}" type="number" value="${o.duration_min||0}"></td>
+                <td><input id="c${o.id}" value="${o.description||''}"></td>
+                <td><input id="dp${o.id}" type="number" value="${o.deposit_percent||0}"></td>
+                <td>
+                    <button onclick="updateOffering(${o.id})">儲存修改</button>
+                </td>
+            </tr>`;
+        }
+        html += "</table>";
+        document.getElementById("offering-list").innerHTML = html;
+    });
+}
+
+// 新增服務
+document.getElementById("add-offering-form").onsubmit = function(e) {
+    e.preventDefault();
+    const token = localStorage.getItem("jwt_token");
+    fetch("/api/offering", {
+        method: "POST",
+        headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            offering_name: this.offering_name.value,
+            price: this.price.value,
+            duration_min: this.duration_min.value,
+            description: this.description.value,
+            deposit_percent: this.deposit_percent.value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) { alert(data.message || "新增失敗"); return; }
+        alert("新增成功！");
+        this.reset();
+        loadOfferingList(token);
+    });
+};
+
+// 修改服務
+window.updateOffering = function(offering_id) {
+    const token = localStorage.getItem("jwt_token");
+    fetch(`/api/offering/${offering_id}`, {
+        method: "PUT",
+        headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            offering_name: document.getElementById(`n${offering_id}`).value,
+            price: document.getElementById(`p${offering_id}`).value,
+            duration_min: document.getElementById(`d${offering_id}`).value,
+            description: document.getElementById(`c${offering_id}`).value,
+            deposit_percent: document.getElementById(`dp${offering_id}`).value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) { alert(data.message || "修改失敗"); return; }
+        alert("修改成功！");
+        loadOfferingList(token);
+    });
+};
+
+// 新增服務時段
+document.getElementById("add-time-form").onsubmit = function(e) {
+    e.preventDefault();
+    const token = localStorage.getItem("jwt_token");
+    fetch("/api/offering_time", {
+        method: "POST",
+        headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            offering_id: this.offering_id.value,
+            start_time: this.start_time.value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) { alert(data.message || "新增時段失敗"); return; }
+        alert("時段新增成功！");
+        this.reset();
+    });
+};
+
+(function main() {
+    const token = localStorage.getItem("jwt_token");
+    if (!token) { alert("請先登入"); window.location.href = "/login"; return; }
+    loadOfferingList(token);
+})();
+</script>
+</body>
+</html>
