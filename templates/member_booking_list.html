@@ -7,68 +7,102 @@
 </head>
 <body>
     <h1>預約清單</h1>
-    <div id = "booking_list"></div>
+    <div id="booking_list"></div>
 <script>
-    let token = localStorage.getItem("jwt_token");
-    let apiUrl = `/api/member/booking_list`
-    if(!token){
-        alert("請先登入");
-        window.location.href ="/login";    
-    }
-    fetch(apiUrl, {
-        method: "GET",
-        headers: {"Authorization": "Bearer " + token}
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log(data); 
-        if(!data){
-            let booking_list = document.getElementById("booking_list")
-            booking_list.textContent = "查無資料"
-        }else{
-            let booking_list = document.getElementById("booking_list")
-            let table = document.createElement("table")
+    function loadingBookingList() {
+        let token = localStorage.getItem("jwt_token");
+        let apiUrl = `/api/member/booking_list`
+        if (!token) {
+            alert("請先登入");
+            window.location.href = "/login";
+            return;
+        }
+        fetch(apiUrl, {
+            method: "GET",
+            headers: { "Authorization": "Bearer " + token }
+        })
+        .then(response => response.json())
+        .then(data => {
+            let booking_list = document.getElementById("booking_list");
+            booking_list.innerHTML = ""; // 先清空
+
+            if (!data || !data.payload || data.payload.length === 0) {
+                booking_list.textContent = "查無資料";
+                return;
+            }
+
+            let table = document.createElement("table");
             table.border = "1";
-            let thead = document.createElement("thead")
-            let headerRow = document.createElement("tr")
-            let headers = ["ID", "服務名稱", "服務價格", "服務開始時間", "結束時間", "服務狀態"];
+            let thead = document.createElement("thead");
+            let headerRow = document.createElement("tr");
+            let headers = ["ID", "服務名稱", "服務價格", "服務開始時間", "結束時間", "服務狀態", "是否取消預約"];
 
             headers.forEach(text => {
                 let th = document.createElement("th");
                 th.innerText = text;
-                headerRow.appendChild(th)
+                headerRow.appendChild(th);
             });
             thead.appendChild(headerRow);
             table.appendChild(thead);
-        let tbody = document.createElement("tbody");
-        data.payload.forEach(newData => {
-            let row = document.createElement("tr");
-            // 依照需求取得各個欄位
-            let id = newData.id || "";
-            let offering = (newData.offering_item && newData.offering_item[0]) ? newData.offering_item[0] : {};
-            let time = (newData.offering_time && newData.offering_time[0]) ? newData.offering_time[0] : {};
 
-            let values = [
-                id,
-                offering.offering_name || "",
-                offering.price || "",
-                time.start_time || "",
-                time.end_time || "",
-                time.status || ""
-            ];
+            let tbody = document.createElement("tbody");
+            data.payload.forEach(newData => {
+                let row = document.createElement("tr");
+                let id = newData.id || "";
+                let offering = (newData.offering_item && newData.offering_item[0]) ? newData.offering_item[0] : {};
+                let time = (newData.offering_time && newData.offering_time[0]) ? newData.offering_time[0] : {};
 
-            values.forEach(val => {
-                let td = document.createElement("td");
-                td.innerText = val;
-                row.appendChild(td);
+                let values = [
+                    id,
+                    offering.offering_name || "",
+                    offering.price || "",
+                    time.start_time || "",
+                    time.end_time || "",
+                    time.status || ""
+                ];
+
+                values.forEach(val => {
+                    let td = document.createElement("td");
+                    td.innerText = val;
+                    row.appendChild(td);
+                });
+
+                // 取消按鈕
+                let tdbtn = document.createElement("td");
+                if (time.status === "booked") {
+                    let celbtn = document.createElement("button");
+                    celbtn.textContent = "取消預約";
+                    celbtn.addEventListener("click", function () {
+                        let apiUrl = `/api/member/booking_list/${id}`;
+                        fetch(apiUrl, {
+                            method: "DELETE",
+                            headers: { "Authorization": "Bearer " + token }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data || !data.success) {
+                                alert("取消失敗");
+                            } else {
+                                alert("取消成功");
+                                loadingBookingList();
+                            }
+                        });
+                    });
+                    tdbtn.appendChild(celbtn);
+                } else {
+                    tdbtn.textContent = "-";
+                }
+                row.appendChild(tdbtn);
+                tbody.appendChild(row);
             });
-            tbody.appendChild(row);
-        });
 
-        table.appendChild(tbody);
-        booking_list.innerHTML = "";  // 清空原本內容
-        booking_list.appendChild(table);
-    }})
+            table.appendChild(tbody);
+            booking_list.appendChild(table);
+        });
+    }
+
+    // 載入頁面時就呼叫
+    loadingBookingList();
 </script>
 </body>
 </html>
