@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="zh-TW">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vendor_booking_list</title>
+</head>
+<body>
+    <h1>商家預約紀錄</h1>
+    <div id = "booking_list"></div>
+</body>
+<script>
+    function VendorBookingList(){
+        let token = localStorage.getItem('jwt_token')
+        let tokensplit = token.split('.')
+        let tokenData = atob(tokensplit[1])
+        let apiUrl = "/api/vendor/booking_list"
+        if (!token){
+            console.log(token)
+            alert("請先登入")
+            window.location.href="/login";
+            return
+        };
+        let vendor_id = JSON.parse(tokenData).vendor_id
+        console.log(vendor_id)
+       if (!vendor_id){
+            alert("請先創建商家會員")
+            window.location.href="/member/register_vendor"
+            return
+        };
+
+        fetch(apiUrl,{
+            method : "GET",
+            headers : {'authorization': "Bearer " + token}
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data)
+            let booking_list = document.getElementById("booking_list")
+            booking_list.innerText = "";
+            if(!data || data.payload.length === 0){
+                booking_list.innerText = "查無資料";
+                return;
+            if(data.message === 'Token expired.'){
+                alert(data.message);
+                window.location.href="/login";
+                return
+            }
+
+            };
+        })
+        
+        let table = document.createElement("table")
+        table.border = 1
+        let thead = document.createElement("thead")
+        let headerRow = document.createElement("tr")
+        let headers = ["ID", "服務名稱", "服務價格", "服務開始時間", "結束時間", "服務狀態", "是否取消預約"];
+        headers.forEach(text => {
+            let th = document.createElement("th");
+            th.innerText = text;
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+    }
+
+VendorBookingList()
+</script>
+</html>

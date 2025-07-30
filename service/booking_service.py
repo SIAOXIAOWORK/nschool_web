@@ -28,7 +28,9 @@ class Booking:
         member_id = g.cur.fetchone()
         if not member_id:
             return False, "Data not found", None
-        if member_id != payload['id']:
+        if member_id['member_id'] != payload['id']:
+            print(member_id)
+            print(payload['id'])
             return False, "Insufficient permissions", None
 
         g.cur.execute("SELECT offering_time_id FROM booking_items where id = %s", (booking_id,))
@@ -36,7 +38,7 @@ class Booking:
         if not offering_time_id:
             return False, "Booking_items not found.", None
         
-        g.cur.execute("SELECT status FROM offering_times where id = %s", (offering_time_id,))
+        g.cur.execute("SELECT status FROM offering_times where id = %s", (offering_time_id['offering_time_id'],))
         offering_time_status = g.cur.fetchone()
         if not offering_time_status:
             return False, "Offering_times not found.", None
@@ -46,7 +48,12 @@ class Booking:
         
         g.cur.execute("""UPDATE offering_times 
                       SET status = 'cancel'
-                      WHERE id = %s""", (offering_time_id,))
+                      WHERE id = %s
+                      RETURNING id, status
+                      """
+                      , (offering_time_id['offering_time_id'],))
+        print(g.cur.fetchone())
+        g.conn.commit()
         
         return True, "Booking canceled.", None
         

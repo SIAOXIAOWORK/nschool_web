@@ -35,7 +35,7 @@ def verify_token(func):
             return func(self, payload, *args, **kwargs)
         
         except ExpiredSignatureError:
-            return {"success":False, "message":"Token expired."} 
+            return {"success":False, "message":"Token expired.", "payload": {}} ,401
         
         except InvalidTokenError:
             return {"success":False, "message":"Invalid token."}

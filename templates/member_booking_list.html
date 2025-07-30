@@ -80,7 +80,8 @@
                         })
                         .then(response => response.json())
                         .then(data => {
-                            if (!data || !data.success) {
+                            if (!data || !data.result) {
+                                console.log(data)
                                 alert("取消失敗");
                             } else {
                                 alert("取消成功");

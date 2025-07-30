@@ -106,6 +106,10 @@ def create_app():
     @app.route('/member/booking/booking_items')
     def member_booking_list():
         return render_template('member_booking_list.html')
+    
+    @app.route('/vendor/booking/booking_items')
+    def vendor_booking_list():
+        return render_template('vendor_booking_list.html')
    
    
    
