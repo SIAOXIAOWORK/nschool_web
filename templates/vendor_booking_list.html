@@ -62,7 +62,63 @@
         });
         thead.appendChild(headerRow);
         table.appendChild(thead);
-    }
+
+        let tbody = document.createElement("tbody")
+            data.payload.forEach(newData => {
+                let row = document.createElement("tr");
+                let id = newData.id || "";
+                let offering = (newData.offering_item && newData.offering_item[0]) ? newData.offering_item[0] : {};
+                let time = (newData.offering_time && newData.offering_time[0]) ? newData.offering_time[0] : {};
+
+                let values = [
+                    id,
+                    offering.offering_name || "",
+                    offering.price || "",
+                    time.start_time || "",
+                    time.end_time || "",
+                    time.status || ""
+                ];
+
+                values.forEach(val => {
+                    let td = document.createElement("td");
+                    td.innerText = val;
+                    row.appendChild(td);
+                });
+
+                // 取消按鈕
+                let tdbtn = document.createElement("td");
+                if (time.status === "booked") {
+                    let celbtn = document.createElement("button");
+                    celbtn.textContent = "取消預約";
+                    celbtn.addEventListener("click", function () {
+                        let apiUrl = `/api/member/booking_list/${id}`;
+                        fetch(apiUrl, {
+                            method: "DELETE",
+                            headers: { "Authorization": "Bearer " + token }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data || !data.result) {
+                                console.log(data)
+                                alert("取消失敗");
+                            } else {
+                                alert("取消成功");
+                                VendorBookingList();
+                            }
+                        });
+                    });
+                    tdbtn.appendChild(celbtn);
+                } else {
+                    tdbtn.textContent = "-";
+                }
+                row.appendChild(tdbtn);
+                tbody.appendChild(row);
+            });
+
+            table.appendChild(tbody);
+            booking_list.appendChild(table);
+        };
+    
 
 VendorBookingList()
 </script>
